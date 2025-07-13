@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Pad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.1/math.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom styles for gradients and deeper shadows */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #e0f2fe, #f0f9ff); /* Light blue gradient background */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08), 0 6px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .button-gradient-blue {
+            background: linear-gradient(to right, #3b82f6, #2563eb); /* Blue gradient */
+        }
+        .button-gradient-blue:hover {
+            background: linear-gradient(to right, #2563eb, #1d4ed8);
+        }
+        .button-gradient-yellow {
+            background: linear-gradient(to right, #f59e0b, #d97706); /* Yellow gradient */
+        }
+        .button-gradient-yellow:hover {
+            background: linear-gradient(to right, #d97706, #b45309);
+        }
+        .button-gradient-red {
+            background: linear-gradient(to right, #ef4444, #dc2626); /* Red gradient */
+        }
+        .button-gradient-red:hover {
+            background: linear-gradient(to right, #dc2626, #b91c1c);
+        }
+        .button-gradient-purple {
+            background: linear-gradient(to right, #8b5cf6, #7c3aed); /* Purple gradient */
+        }
+        .button-gradient-purple:hover {
+            background: linear-gradient(to right, #7c3aed, #6d28d9);
+        }
+
+        /* General control button styling */
+        .control-button {
+            padding: 0.75rem 1.5rem; /* Increased padding for better touch target */
+            border-radius: 0.75rem; /* More rounded */
+            font-weight: 600;
+            color: white;
+            transition: all 0.2s ease-in-out;
+            white-space: nowrap;
+            border: none; /* Remove default button border */
+            cursor: pointer;
+        }
+        .control-button:active {
+            transform: translateY(1px); /* Subtle press effect */
+            box-shadow: none;
+        }
+
+        /* Styles for the save options dropdown/modal */
+        .save-options-container {
+            position: absolute;
+            background-color: white;
+            border-radius: 1rem; /* More rounded */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); /* Deeper shadow */
+            padding: 1rem;
+            z-index: 20; /* Ensure it's above other elements */
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem; /* Increased gap */
+            min-width: 180px; /* Slightly wider */
+        }
+        .save-options-button {
+            padding: 0.75rem 1rem; /* Increased padding */
+            border-radius: 0.625rem; /* More rounded */
+            font-weight: 500;
+            text-align: left;
+            transition: background-color 0.2s, transform 0.1s;
+            color: #334155; /* Slate-700 */
+        }
+        .save-options-button:hover {
+            background-color: #f0f4f8; /* Light gray hover */
+            transform: translateX(2px); /* Slight slide effect */
+        }
+
+        /* Styles for the message box */
+        #messageBox {
+            position: fixed;
+            bottom: 1.5rem; /* Position at bottom */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8); /* Slightly transparent dark background */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem; /* More rounded */
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            pointer-events: none;
+            white-space: nowrap;
+            font-size: 0.95rem;
+        }
+        #messageBox.show {
+            opacity: 1;
+        }
+
+        /* Styles for the function reference */
+        .function-example-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.625rem 1rem; /* Increased padding */
+            border-radius: 0.625rem; /* More rounded */
+            background-color: #f0f4f8; /* Light blue-gray */
+            color: #334155; /* slate-700 */
+            font-family: 'monospace';
+            font-size: 0.875rem;
+            border: 1px solid #cbd5e1; /* slate-300 */
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .function-example-button:hover {
+            background-color: #e2e8f0; /* slate-200 */
+            transform: translateY(-1px); /* Subtle lift */
+        }
+        .function-example-button strong {
+            color: #1e293b; /* slate-900 */
+        }
+        .function-example-button span {
+            font-size: 0.8rem; /* Smaller description text */
+            color: #64748b; /* slate-500 */
+        }
+
+        /* Social media icon styling */
+        .social-icon {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 2.5rem; /* 40px */
+            height: 2.5rem; /* 40px */
+            border-radius: 50%; /* Circular */
+            background-color: #cbd5e1; /* slate-300 */
+            color: #475569; /* slate-600 */
+            transition: all 0.2s ease-in-out;
+        }
+        .social-icon:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .social-icon.linkedin:hover { background-color: #0A66C2; color: white; }
+        .social-icon.instagram:hover { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); color: white; }
+        .social-icon.facebook:hover { background-color: #1877F2; color: white; }
+
+    </style>
+</head>
+<body class="flex flex-col items-center p-4 sm:p-6 lg:p-8">
+
+    <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-8 tracking-tight">
+        <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+            Creative Pad
+        </span>
+    </h1>
+
+    <div class="w-full max-w-2xl bg-white p-6 rounded-2xl card-shadow mb-8 flex flex-col items-center gap-4">
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Advanced Math Calculator</h2>
+        <div class="flex items-center gap-3 w-full max-w-sm">
+            <input type="text" id="mathInput" placeholder="e.g., (2+3)*4= or sin(pi/2)=" class="flex-grow p-3 border-2 border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-800 text-lg outline-none transition duration-200">
+            <span id="mathResult" class="font-extrabold text-xl text-blue-600 min-w-[60px] text-right"></span>
+        </div>
+        <p class="text-sm text-gray-600 text-center">Type an expression (e.g., `(5+2)*3=`, `sqrt(16)=`, `sin(pi/2)=`) and press '=' for the result.</p>
+
+        <button id="toggleMathReferenceBtn" class="control-button button-gradient-purple hover:shadow-lg focus:ring-purple-500 mt-4">
+            Show Math Functions
+        </button>
+
+        <div id="mathReferenceContainer" class="hidden w-full mt-4 p-4 bg-gray-100 rounded-xl border border-gray-200 max-h-80 overflow-y-auto card-shadow">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Quick Reference</h3>
+            <div id="mathFunctionsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                </div>
+        </div>
+    </div>
+
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Creative Canvas</h2>
+
+    <div class="relative flex flex-wrap justify-center items-center gap-4 sm:gap-5 mb-8 w-full max-w-2xl bg-white p-6 rounded-2xl card-shadow">
+        <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl shadow-sm border border-gray-200">
+            <label for="colorPicker" class="text-gray-700 text-base font-medium">Color:</label>
+            <input type="color" id="colorPicker" value="#000000" class="w-10 h-10 rounded-md cursor-pointer border border-gray-300">
+        </div>
+
+        <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl shadow-sm border border-gray-200">
+            <label for="lineWidth" class="text-gray-700 text-base font-medium">Width:</label>
+            <input type="range" id="lineWidth" min="1" max="20" value="5" class="w-28 sm:w-36 cursor-pointer accent-blue-500">
+            <span id="lineWidthValue" class="text-gray-700 text-base font-medium min-w-[20px] text-center">5</span>
+        </div>
+
+        <button id="eraserBtn" class="control-button button-gradient-yellow hover:shadow-lg focus:ring-yellow-500">
+            Eraser
+        </button>
+
+        <button id="clearBtn" class="control-button button-gradient-red hover:shadow-lg focus:ring-red-500">
+            Clear
+        </button>
+
+        <button id="toggleSaveOptionsBtn" class="control-button button-gradient-blue hover:shadow-lg focus:ring-blue-500">
+            Save Options
+        </button>
+
+        <div id="saveOptionsContainer" class="save-options-container hidden top-full mt-3 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0">
+            <button id="downloadPngBtn" class="save-options-button hover:bg-blue-50">Download as PNG</button>
+            <button id="downloadJpegBtn" class="save-options-button hover:bg-blue-50">Download as JPEG</button>
+            <button id="shareImageBtn" class="save-options-button hover:bg-blue-50">Share Image</button>
+        </div>
+    </div>
+
+    <div class="w-full max-w-4xl flex-grow flex justify-center items-center min-h-[350px] sm:min-h-[450px] lg:min-h-[600px] bg-white rounded-2xl card-shadow overflow-hidden">
+        <canvas id="drawingCanvas" class="w-full h-full"></canvas>
+    </div>
+
+    <div class="w-full max-w-2xl bg-white p-6 rounded-2xl card-shadow mt-12 mb-8 flex flex-col items-center text-center">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">About Creative Pad</h2>
+        <p class="text-gray-700 leading-relaxed mb-4">
+            Creative Pad is designed to be your versatile digital workspace, combining the joy of freehand drawing with the power of an advanced mathematical calculator. Whether you're sketching ideas, practicing your handwriting, or solving complex equations, our aim is to provide a seamless and intuitive experience.
+        </p>
+        <p class="text-gray-700 leading-relaxed">
+            We believe in empowering creativity and learning through simple, effective tools. This platform is continuously evolving to meet your needs and inspire your next big idea.
+        </p>
+    </div>
+
+    <div class="w-full max-w-2xl bg-white p-6 rounded-2xl card-shadow mb-12 flex flex-col items-center text-center">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Contact Us</h2>
+        <p class="text-gray-700 leading-relaxed mb-4">
+            Have questions, feedback, or need assistance? We're here to help! Reach out to us through the following channels:
+        </p>
+        <div class="flex flex-col sm:flex-row items-center gap-4 text-gray-800 text-lg">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-envelope text-blue-500"></i>
+                <a href="mailto:support@creativepad.com" class="text-blue-600 hover:underline">support@creativepad.com</a>
+            </div>
+            <div class="flex items-center gap-2">
+                <i class="fas fa-phone-alt text-green-500"></i>
+                <a href="tel:+1234567890" class="text-green-600 hover:underline">+1 (234) 567-890</a>
+            </div>
+            <div class="flex items-center gap-2">
+                <i class="fas fa-map-marker-alt text-red-500"></i>
+                <span>123 Creative Lane, Innovation City, CA 90210</span>
+            </div>
+        </div>
+        <p class="text-sm text-gray-600 mt-4">
+            Our support team is available Monday to Friday, 9 AM - 5 PM (Your Time Zone).
+        </p>
+    </div>
+
+
+    <div id="messageBox" class="hidden"></div>
+
+    <footer class="w-full bg-gray-800 text-gray-300 py-6 mt-auto rounded-t-2xl card-shadow">
+        <div class="container mx-auto flex flex-col items-center gap-4">
+            <p class="text-sm">© 2023 Creative Pad. All rights reserved.</p>
+            <div class="flex space-x-4">
+                <a href="https://www.linkedin.com/in/yourprofile" target="_blank" aria-label="LinkedIn" class="social-icon linkedin">
+                    <i class="fab fa-linkedin-in text-lg"></i>
+                </a>
+                <a href="https://www.instagram.com/yourprofile" target="_blank" aria-label="Instagram" class="social-icon instagram">
+                    <i class="fab fa-instagram text-lg"></i>
+                </a>
+                <a href="https://www.facebook.com/yourprofile" target="_blank" aria-label="Facebook" class="social-icon facebook">
+                    <i class="fab fa-facebook-f text-lg"></i>
+                </a>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+                Designed with <span class="text-red-500">♥</span> for creativity.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Get canvas and context
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get control elements
+        const colorPicker = document.getElementById('colorPicker');
+        const lineWidthSlider = document.getElementById('lineWidth');
+        const lineWidthValueSpan = document.getElementById('lineWidthValue');
+        const eraserBtn = document.getElementById('eraserBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const toggleSaveOptionsBtn = document.getElementById('toggleSaveOptionsBtn');
+        const saveOptionsContainer = document.getElementById('saveOptionsContainer');
+        const downloadPngBtn = document.getElementById('downloadPngBtn');
+        const downloadJpegBtn = document.getElementById('downloadJpegBtn');
+        const shareImageBtn = document.getElementById('shareImageBtn');
+        const messageBox = document.getElementById('messageBox'); // Get the message box element
+
+        // Get math elements
+        const mathInput = document.getElementById('mathInput');
+        const mathResult = document.getElementById('mathResult');
+        const toggleMathReferenceBtn = document.getElementById('toggleMathReferenceBtn');
+        const mathReferenceContainer = document.getElementById('mathReferenceContainer');
+        const mathFunctionsList = document.getElementById('mathFunctionsList');
+
+        // Drawing state variables
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let currentColor = colorPicker.value;
+        let currentLineWidth = parseInt(lineWidthSlider.value);
+        let isEraserMode = false;
+
+        // Function to display temporary messages to the user
+        function showMessage(message, duration = 3000) {
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden');
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+                // Give a slight delay before hiding completely to allow transition to finish
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 300);
+            }, duration);
+        }
+
+        // Function to set canvas dimensions based on its container
+        function resizeCanvas() {
+            // Get the computed style of the canvas's parent to determine available space
+            const parent = canvas.parentElement;
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+
+            // Redraw content if needed (for more complex apps, you'd save drawing history)
+            // For this simple app, clearing and resetting drawing styles is sufficient on resize
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentLineWidth;
+        }
+
+        // Initial canvas resize and resize on window load and resize events
+        window.onload = function() {
+            resizeCanvas();
+            // Add event listener for window resize
+            window.addEventListener('resize', resizeCanvas);
+            populateMathFunctions(); // Populate math functions on load
+        };
+
+        // --- Event Handlers for Drawing ---
+
+        // Function to get coordinates relative to the canvas
+        function getCanvasCoordinates(event) {
+            const rect = canvas.getBoundingClientRect();
+            // For mouse events
+            if (event.clientX !== undefined) {
+                return {
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top
+                };
+            }
+            // For touch events (use the first touch point)
+            if (event.touches && event.touches.length > 0) {
+                return {
+                    x: event.touches[0].clientX - rect.left,
+                    y: event.touches[0].clientY - rect.top
+                };
+            }
+            return { x: 0, y: 0 }; // Fallback
+        }
+
+        function startDrawing(event) {
+            isDrawing = true;
+            const { x, y } = getCanvasCoordinates(event);
+            [lastX, lastY] = [x, y]; // Set starting point
+            ctx.beginPath(); // Start a new path
+        }
+
+        function draw(event) {
+            if (!isDrawing) return;
+
+            // Prevent scrolling on touch devices while drawing
+            event.preventDefault();
+
+            const { x, y } = getCanvasCoordinates(event);
+
+            ctx.lineTo(x, y); // Draw a line to the current point
+            ctx.stroke();      // Apply the stroke
+            [lastX, lastY] = [x, y]; // Update last position
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.closePath(); // Close the current path
+        }
+
+        // --- Event Listeners for Mouse and Touch ---
+
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing); // Stop drawing if mouse leaves canvas
+
+        // Touch events (for mobile responsiveness)
+        canvas.addEventListener('touchstart', startDrawing, { passive: false }); // passive: false to allow preventDefault
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchcancel', stopDrawing); // Handle touch being cancelled
+
+        // --- Event Listeners for Controls ---
+
+        colorPicker.addEventListener('input', (e) => {
+            currentColor = e.target.value;
+            ctx.strokeStyle = currentColor;
+            isEraserMode = false; // Turn off eraser when a color is picked
+            eraserBtn.classList.remove('button-gradient-yellow-active'); // Remove active style
+            eraserBtn.classList.add('button-gradient-yellow');
+        });
+
+        lineWidthSlider.addEventListener('input', (e) => {
+            currentLineWidth = parseInt(e.target.value);
+            lineWidthValueSpan.textContent = currentLineWidth;
+            ctx.lineWidth = currentLineWidth;
+        });
+
+        eraserBtn.addEventListener('click', () => {
+            isEraserMode = !isEraserMode; // Toggle eraser mode
+            if (isEraserMode) {
+                ctx.strokeStyle = '#ffffff'; // Set color to white for erasing
+                eraserBtn.classList.remove('button-gradient-yellow');
+                eraserBtn.classList.add('button-gradient-yellow-active'); // Indicate active state (can define a specific active class in CSS)
+            } else {
+                ctx.strokeStyle = currentColor; // Revert to selected color
+                eraserBtn.classList.remove('button-gradient-yellow-active');
+                eraserBtn.classList.add('button-gradient-yellow');
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            // Clear the entire canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            showMessage('Canvas cleared!');
+        });
+
+        // Toggle Save Options visibility
+        toggleSaveOptionsBtn.addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevent click from immediately closing the options
+            saveOptionsContainer.classList.toggle('hidden');
+        });
+
+        // Close save options if clicked outside
+        document.addEventListener('click', (event) => {
+            if (!saveOptionsContainer.contains(event.target) && !toggleSaveOptionsBtn.contains(event.target)) {
+                saveOptionsContainer.classList.add('hidden');
+            }
+        });
+
+        // Function to download image using Blob
+        async function downloadImage(format, quality = 0.9) {
+            showMessage(`Preparing ${format.toUpperCase()} for download...`);
+            try {
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, `image/${format}`, quality));
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `my_tracing_drawing.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url); // Clean up the object URL
+                showMessage(`Image downloaded as ${format.toUpperCase()}! Check your Downloads folder.`);
+            } catch (error) {
+                console.error('Error downloading image:', error);
+                showMessage('Failed to download image. Please try again.');
+            } finally {
+                saveOptionsContainer.classList.add('hidden'); // Hide options after download attempt
+            }
+        }
+
+        // Download PNG
+        downloadPngBtn.addEventListener('click', () => downloadImage('png'));
+
+        // Download JPEG
+        downloadJpegBtn.addEventListener('click', () => downloadImage('jpeg'));
+
+        // Share Image
+        shareImageBtn.addEventListener('click', async () => {
+            if (navigator.share) {
+                showMessage('Opening share options...');
+                try {
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    const filesArray = [new File([blob], 'my_tracing_drawing.png', { type: 'image/png' })];
+
+                    await navigator.share({
+                        files: filesArray,
+                        title: 'My Tracing Drawing',
+                        text: 'Check out my drawing from the Creative Pad!',
+                    });
+                    showMessage('Image shared successfully!');
+                } catch (error) {
+                    if (error.name !== 'AbortError') { // AbortError means user cancelled
+                        console.error('Error sharing image:', error);
+                        showMessage('Failed to share image. Your device/browser might not support sharing files this way.');
+                    } else {
+                        showMessage('Sharing cancelled by user.');
+                    }
+                }
+            } else {
+                showMessage('Sharing not supported on this device/browser. Please use the download options instead.');
+            }
+            saveOptionsContainer.classList.add('hidden'); // Hide options after attempting share
+        });
+
+        // --- Math Calculator Logic (using math.js) ---
+        mathInput.addEventListener('input', () => {
+            const expression = mathInput.value.trim();
+            mathResult.textContent = ''; // Clear previous result
+
+            if (expression.endsWith('=')) {
+                const cleanExpression = expression.slice(0, -1); // Remove the '='
+                try {
+                    // Use math.evaluate from the math.js library
+                    const result = math.evaluate(cleanExpression);
+                    // Format the result nicely
+                    if (typeof result === 'number') {
+                        mathResult.textContent = `= ${result.toFixed(4)}`; // Round to 4 decimal places for precision
+                    } else {
+                        // Handle other types of results (e.g., complex numbers, matrices if enabled)
+                        mathResult.textContent = `= ${result.toString()}`;
+                    }
+                    showMessage('Calculation successful!');
+                } catch (e) {
+                    console.error('Math calculation error:', e);
+                    mathResult.textContent = 'Error';
+                    showMessage(`Calculation failed: ${e.message}`);
+                }
+            }
+        });
+
+        // --- Math Function Reference Logic ---
+        const mathFunctions = [
+            { name: 'Addition', example: '2 + 3 =', desc: 'Adds two numbers.' },
+            { name: 'Subtraction', example: '10 - 4 =', desc: 'Subtracts two numbers.' },
+            { name: 'Multiplication', example: '5 * 6 =', desc: 'Multiplies two numbers.' },
+            { name: 'Division', example: '15 / 3 =', desc: 'Divides two numbers.' },
+            { name: 'Exponentiation', example: '2 ^ 3 =', desc: 'Raises a base to an exponent.' },
+            { name: 'Modulo', example: '10 % 3 =', desc: 'Returns the remainder of a division.' },
+            { name: 'Parentheses', example: '(2 + 3) * 4 =', desc: 'Controls order of operations.' },
+            { name: 'Constants: pi', example: '2 * pi =', desc: 'The mathematical constant pi (approx. 3.14159).' },
+            { name: 'Constants: e', example: 'e ^ 2 =', desc: 'Euler\'s number (approx. 2.718).' },
+            { name: 'Square Root', example: 'sqrt(25) =', desc: 'Calculates the square root.' },
+            { name: 'Nth Root', example: 'nthRoot(8, 3) =', desc: 'Calculates the nth root (e.g., cube root of 8).' },
+            { name: 'Sine', example: 'sin(pi / 2) =', desc: 'Calculates the sine of an angle (radians).' },
+            { name: 'Cosine', example: 'cos(0) =', desc: 'Calculates the cosine of an angle (radians).' },
+            { name: 'Tangent', example: 'tan(pi / 4) =', desc: 'Calculates the tangent of an angle (radians).' },
+            { name: 'Absolute Value', example: 'abs(-5) =', desc: 'Returns the absolute value.' },
+            { name: 'Round', example: 'round(3.7) =', desc: 'Rounds to the nearest integer.' },
+            { name: 'Floor', example: 'floor(3.7) =', desc: 'Rounds down to the nearest integer.' },
+            { name: 'Ceil', example: 'ceil(3.2) =', desc: 'Rounds up to the nearest integer.' },
+            { name: 'Logarithm (base e)', example: 'log(e) =', desc: 'Natural logarithm (base e).' },
+            { name: 'Logarithm (base 10)', example: 'log10(100) =', desc: 'Logarithm with base 10.' },
+            { name: 'Logarithm (base 2)', example: 'log2(8) =', desc: 'Logarithm with base 2.' },
+            { name: 'Min', example: 'min(1, 5, 2) =', desc: 'Returns the smallest value from a list.' },
+            { name: 'Max', example: 'max(1, 5, 2) =', desc: 'Returns the largest value from a list.' },
+            { name: 'Factorial', example: 'factorial(5) =', desc: 'Calculates the factorial (e.g., 5! = 120).' },
+        ];
+
+        function populateMathFunctions() {
+            mathFunctionsList.innerHTML = ''; // Clear existing list
+            mathFunctions.forEach(func => {
+                const button = document.createElement('button');
+                button.className = 'function-example-button';
+                button.innerHTML = `<strong>${func.name}:</strong> ${func.example} <br> <span class="text-gray-500">${func.desc}</span>`;
+                button.onclick = () => {
+                    mathInput.value = func.example;
+                    // Trigger input event to simulate typing and calculate immediately
+                    mathInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    mathReferenceContainer.classList.add('hidden'); // Hide reference after selection
+                    toggleMathReferenceBtn.textContent = 'Show Math Functions'; // Reset button text
+                };
+                mathFunctionsList.appendChild(button);
+            });
+        }
+
+        toggleMathReferenceBtn.addEventListener('click', () => {
+            mathReferenceContainer.classList.toggle('hidden');
+            if (mathReferenceContainer.classList.contains('hidden')) {
+                toggleMathReferenceBtn.textContent = 'Show Math Functions';
+            } else {
+                toggleMathReferenceBtn.textContent = 'Hide Math Functions';
+            }
+        });
+
+        // Initial setup for drawing context
+        ctx.lineCap = 'round'; // Rounded ends for lines
+        ctx.lineJoin = 'round'; // Rounded corners for lines
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = currentLineWidth;
+
+    </script>
+</body>
+</html>
